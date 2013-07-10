@@ -5,15 +5,15 @@ Class SimpleBlog{
   private $handlers;
   public function __construct(){
     $this->handlers = array(
-        'route' => function($t, $arguments, &$route){
+        'route' => function($t, $matches, &$route){
 
-          $newRoute = trim(str_replace(['\'','"'], '', $arguments));
+          $newRoute = trim(str_replace(['\'','"'], '', $matches[1]));
           $t->routes[$newRoute] = $t->routes[$route];
           unset($t->routes[$route]);
           $route = $newRoute;
         },
-        'title' => function($t, $arguments, $route){
-          $t->routes[$route]['title'] = $arguments;
+        'title' => function($t, $matches, $route){
+          $t->routes[$route]['title'] = $matches[2];
         },
 
 
@@ -39,9 +39,10 @@ Class SimpleBlog{
 
         preg_match("/\{\{{$property}\s?:\s?(.*)\}\}/i", $fileContent, $matches);
         if (isset($matches[1])){
-          $handler($this, $matches[1], $route);
+          var_dump($matches);
+          $handler($this, $matches, $route);
         }
-
+        $fileContent = preg_replace("/\{\{{$property}\s?:\s?(.*)\}\}/i", '', $fileContent);
       }
 
       //clan all
@@ -67,6 +68,7 @@ while(preg_match("/{{(.*)}}/i", $wrapper, $matches)){
   if ($matches[1]){
     $property = $matches[1];
     if (isset($page[$property])){
+      var_dump($page[$property]);
       $wrapper = preg_replace("/\{\{{$property}\}\}/i", $page[$property], $wrapper);
     }
   }
