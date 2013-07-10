@@ -1,18 +1,38 @@
 <?php
+
 define('PAGES_DIR', 'pages');
+define('WRAPPER_PAGE', 'public/index.html');
+
 Class SimpleBlog{
-  private $routes = array();
+  private $pages = array();
   private $handlers;
+
+
   public function __construct(){
     $this->handlers = array(
-        'list' =>function($t, $matches, &$route){
-          return '<ul> <li>Item</li> </ul>';
-        },
-        '.*' => function($t, $matches, &$page){
-          $page[$matches[1]] = $matches[2];
-        },
+        'list' =>function($t, $matches, &$scope){
+          ob_start();
+          include 'pieces/list.html';
+          return ob_get_clean();
 
+        },
+        'content' => function($t, $matches, &$scope){
+          // when inserting content put vars from current scope (if available)
+          if (isset($scope['content'])){
+            return $t->parseContent($scope['content'], $scope)['content'];
+          }
+        },
+        '.*' => function($t, $matches, &$scope){
+          if ($matches[2][0]!==''){
+            $scope[$matches[1][0]] = $matches[2][0];
+            return '';
+          }
 
+          if (isset($scope[$matches[1][0]])){
+            return $scope[$matches[1][0]];
+          }
+          return $matches[0][0];
+        },
       );
 
     $this->scanPages();
@@ -28,51 +48,53 @@ Class SimpleBlog{
 
     foreach ($files as $file) {
       if (substr($file,0,1)==='.') continue;
-      $fileContent = file_get_contents(PAGES_DIR.'/'.$file);
 
+      $newScope = array();
+      $rawContent = file_get_contents(PAGES_DIR.'/'.$file);
+      $scope = $this->parseContent($rawContent, $newScope);
+      $this->pages[$scope['route']] = $scope;
+    }
+  }
+  private function parseContent($content, $scope){
       // cita dodele
-      $page = array();
-      $pattern = "/\{\{(.*)\s?:\s?(.*)\}\}/i";
-
-      while(preg_match($pattern, $fileContent, $matches)){
-        $property = $matches[1];
+      $pattern = "/\{\{([^:}]*):?(.*)\}\}/i";
+      $offset = 0;
+      while(preg_match($pattern, $content, $matches, PREG_OFFSET_CAPTURE, $offset)){
+        $property = $matches[1][0];
         foreach ($this->handlers as $handlerPattern => $handler) {
           $handlerPattern = '/'.$handlerPattern.'/i';
           if (preg_match($handlerPattern, $property, $arguments)){
-            $return = $handler($this, $matches, $page);
+            $return = $handler($this, $matches, $scope);
             break;
           }
         }
-
-        $fileContent = preg_replace($pattern, $return, $fileContent, 1);
+        $offset = $matches[0][1]  + strlen($return);
+        $content = preg_replace($pattern, $return, $content, 1);
       };
-      $page['content'] = $fileContent;
-      $this->routes[$page['route']] = $page;
-
-
-    }
+      $scope['content'] = $content;
+      return $scope;
   }
 
   public function getPage($route){
-    return isset($this->routes[$route]) ? $this->routes[$route] : null;
+
+    $route = $route  === '' ? '.' : $route;
+    return isset($this->pages[$route]) ? $this->pages[$route] : null;
+  }
+
+
+  public function renderPage($route){
+    $pageScope = $this->getPage($route);
+    if ($pageScope===null) $this->send404();
+    return $this->parseContent(file_get_contents(WRAPPER_PAGE), $pageScope)['content'];
+
   }
 
 }
 
 $sb = new SimpleBlog();
+
 $r = isset($_GET['r'])?$_GET['r']:'';
-$page = $sb->getPage($r);
-if ($page === null) $sb->send404();
 
-$wrapper = file_get_contents('public/index.html');
+echo $sb->renderPage($r);
 
-while(preg_match("/{{(.*)}}/i", $wrapper, $matches)){
-  if ($matches[1]){
-    $property = $matches[1];
-    $wrapper = preg_replace("/\{\{{$property}\}\}/i", isset($page[$property]) ? $page[$property] : '', $wrapper);
-  }
-}
-
-
-echo $wrapper;
 ?>
