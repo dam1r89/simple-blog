@@ -5,16 +5,11 @@ Class SimpleBlog{
   private $handlers;
   public function __construct(){
     $this->handlers = array(
-        'route' => function($t, $matches, &$route){
-
-          $newRoute = trim(str_replace(['\'','"'], '', $matches[2]));
-          $t->routes[$newRoute] = $t->routes[$route];
-          unset($t->routes[$route]);
-          $route = $newRoute;
-
+        'list' =>function($t, $matches, &$route){
+          return '<ul> <li>Item</li> </ul>';
         },
-        '.*' => function($t, $matches, $route){
-          $t->routes[$route][$matches[2]] = $matches[2];
+        '.*' => function($t, $matches, &$page){
+          $page[$matches[1]] = $matches[2];
         },
 
 
@@ -35,10 +30,8 @@ Class SimpleBlog{
       if (substr($file,0,1)==='.') continue;
       $fileContent = file_get_contents(PAGES_DIR.'/'.$file);
 
-      $route = rand();
-      $this->routes[$route] = array('content' => $fileContent);
       // cita dodele
-
+      $page = array();
       $pattern = "/\{\{(.*)\s?:\s?(.*)\}\}/i";
 
       while(preg_match($pattern, $fileContent, $matches)){
@@ -46,15 +39,15 @@ Class SimpleBlog{
         foreach ($this->handlers as $handlerPattern => $handler) {
           $handlerPattern = '/'.$handlerPattern.'/i';
           if (preg_match($handlerPattern, $property, $arguments)){
-            $handler($this, $matches, $route);
+            $return = $handler($this, $matches, $page);
             break;
-
           }
         }
-        $fileContent = preg_replace($pattern, '', $fileContent, 1);
-      };
 
-      $this->routes[$route]['content'] = preg_replace("/{{(.*)}}/i", '', $this->routes[$route]['content']);
+        $fileContent = preg_replace($pattern, $return, $fileContent, 1);
+      };
+      $page['content'] = $fileContent;
+      $this->routes[$page['route']] = $page;
 
 
     }
@@ -67,7 +60,7 @@ Class SimpleBlog{
 }
 
 $sb = new SimpleBlog();
-$r = $_GET['r'];
+$r = isset($_GET['r'])?$_GET['r']:'';
 $page = $sb->getPage($r);
 if ($page === null) $sb->send404();
 
