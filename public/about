@@ -5,7 +5,7 @@
 <head ng-app>
   <base href="http://localhost/simple_blog/public/">
   <meta charset="UTF-8">
-  <title>Glavn Stranica</title>
+  <title>About Stranica</title>
 </head>
 <body>
   <h3>Layout</h3>
@@ -17,9 +17,12 @@
 </nav>
   
 
-<h1>Glavna Stranica</h1>
-<p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Blanditiis, quibusdam, <a href="http://www.google.com">beatae</a>, quod, vitae ratione itaque totam ipsam mollitia suscipit quaerat quae consequuntur hic sequi esse ab facilis commodi. Obcaecati, magnam?</p>
-Verzija stranice: 2.2
+<h1>About stranica</h1>
+<p>Na ovoj stranici testiram kako rade linkovi. Ne znam gde ce voditi ovaj link <a href="about">Link</a>.
+  <br>
+  Gadja trenutnu stranicu, znaci cita iz current Scope-a.
+
+<p>Postoji bug, ne moze da cita na istoj stranici na kojoj je promenjiva postavljena.</p>
 
 </body>
 </html>

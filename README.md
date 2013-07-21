@@ -4,5 +4,7 @@
 
 [x] pieces
 [ ] bug - cannot use variable on same page where it is defined
-[ ] caching
-[ ] nicer way of building pieces
+[x] caching
+[x] nicer way of building pieces
+[ ] nice little editor - one file possibly
+[ ] backup command (save with current date-time). Maybe just
