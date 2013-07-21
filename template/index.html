@@ -2,15 +2,28 @@
 {{version:2.2}}
 {{base:http://localhost/simple_blog/template/}}
 <html lang="en">
-<head ng-app>
+<head>
   <base href="{{base}}">
   <link rel="stylesheet" href="css/style.css">
   <meta charset="UTF-8">
   <title>{{title}}</title>
 </head>
 <body>
-  <h3>Layout</h3>
-  <nav>{{piece:navigation.html}}</nav>
-  {{content}}
+  <header>
+    <nav>{{piece:navigation.html}}</nav>
+  </header>
+  <nav class="articles">
+    {{piece:articles.html}}
+  </nav>
+  <div class="content">
+    {{content}}
+  </div>
+  <footer>
+    <div class="inner">
+      <span>dam1r89 simple blog</span>
+      <span class="right">Simple blog generator version: {{version}}</span>
+    </div>
+
+  </footer>
 </body>
 </html>

@@ -2,24 +2,38 @@
 
 
 <html lang="en">
-<head ng-app>
-  <base href="http://localhost/simple_blog/public/">
+<head>
+  <base href="http://localhost/simple_blog/template/">
+  <link rel="stylesheet" href="css/style.css">
   <meta charset="UTF-8">
-  <title>Glavn Stranica</title>
+  <title>Home page</title>
 </head>
 <body>
-  <h3>Layout</h3>
-  <nav><ul>
-      <li><a href="about">About Stranica</a></li>
-      <li><a href="dobar/dan/dobrodosli.html">Welcome</a></li>
-      <li><a href=".">Glavn Stranica</a></li>
-  </ul>
-</nav>
-  
+  <header>
+    <nav>  <a href=".">Home page</a>
+  <a href="my_friends/manual.htm">Manualovi utisci</a>
+ </nav>
+  </header>
+  <nav class="articles">
+            <a href="sr/pisi_blog">
+    Piši blog    (13/07/2013)
+  </a>
 
-<h1>Glavna Stranica</h1>
-<p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Blanditiis, quibusdam, <a href="http://www.google.com">beatae</a>, quod, vitae ratione itaque totam ipsam mollitia suscipit quaerat quae consequuntur hic sequi esse ab facilis commodi. Obcaecati, magnam?</p>
-Verzija stranice: 2.2
+  </nav>
+  <div class="content">
+    
 
+<h1>
+  This is my new Home page
+</h1>
+
+  </div>
+  <footer>
+    <div class="inner">
+      <span>dam1r89 simple blog</span>
+      <span class="right">Simple blog generator version: 2.2</span>
+    </div>
+
+  </footer>
 </body>
 </html>

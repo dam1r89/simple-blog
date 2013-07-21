@@ -5,50 +5,15 @@ define('STATIC_DIR', 'public');
 define('ASSETS_DIR', 'template/assets');
 define('WRAPPER_PAGE', 'template/index.html');
 define('PIECES_DIR', 'template/pieces');
-Class SimpleBlog{
-  private $pages = array();
-  private $handlers;
-
-
-  public function __construct(){
-    $this->handlers = array(
-        'piece' =>function($t, $matches, &$scope){
-          ob_start();
-          include PIECES_DIR.'/'.$matches[2][0];
-          return ob_get_clean();
-
-        },
-        'link' => function($t, $matches, &$scope){
-          return 'http://www.google.com';
-        },
-        'content' => function($t, $matches, &$scope){
-          // when inserting content put vars from current scope (if available)
-          if (isset($scope['content'])){
-            return $t->parseContent($scope['content'], $scope)['content'];
-          }
-        },
-        '.*' => function($t, $matches, &$scope){
-          if ($matches[2][0]!==''){
-            $scope[$matches[1][0]] = $matches[2][0];
-            return '';
-          }
-
-          if (isset($scope[$matches[1][0]])){
-            return $scope[$matches[1][0]];
-          }
-          return $matches[0][0];
-        },
-      );
 
 
 
-    $this->scanPages();
-  }
+Class FileSystem{
   public static function recursiveDelete($path)
   {
     return is_file($path)?
       @unlink($path):
-      array_map('SimpleBlog::recursiveDelete',glob($path.'/*'))==@rmdir($path)
+      array_map('FileSystem::recursiveDelete',glob($path.'/*'))==@rmdir($path)
     ;
   }
   public static function recursiveCopy($source, $dest, $diffDir = ''){
@@ -70,11 +35,73 @@ Class SimpleBlog{
           }
       }
   }
+  public static function recursiveScan($path){
+    $allFiles = array();
+    foreach (scandir($path) as $fileName) {
+      if (substr($fileName,0,1)==='.') continue;
+      $file = $path.'/'.$fileName;
+      if (is_dir($file)){
+        $allFiles = array_merge($allFiles, self::recursiveScan($file));
+        continue;
+      }
+      $allFiles[] = $file;
+    }
+    return $allFiles;
+  }
+
+}
+
+
+Class SimpleBlog{
+  private $pages = array();
+  private $handlers;
+
+
+  public function __construct(){
+    $this->handlers = array(
+        'piece' =>function($t, $matches, &$scope){
+          ob_start();
+          include PIECES_DIR.'/'.$matches[2][0];
+          return ob_get_clean();
+
+        },
+        'link' => function($t, $matches, &$scope){
+
+          foreach ($t->pages as $route => $page) {
+            if ($page['title'] === $matches[2][0]){
+              return $page['route'];
+            }
+          }
+          return $matches[0][0];
+        },
+        'content' => function($t, $matches, &$scope){
+          // when inserting content put vars from current scope (if available)
+          if (isset($scope['content'])){
+            return $t->compile($scope['content'], $scope)['content'];
+          }
+        },
+        '.*' => function($t, $matches, &$scope){
+          if ($matches[2][0]!==''){
+            $scope[$matches[1][0]] = $matches[2][0];
+            return '';
+          }
+
+          if (isset($scope[$matches[1][0]])){
+            return $scope[$matches[1][0]];
+          }
+          return $matches[0][0];
+        },
+      );
+
+
+
+    $this->scanPages();
+  }
 
   public function build(){
     $cachedPages = array();
-    SimpleBlog::recursiveDelete(STATIC_DIR);
-    SimpleBlog::recursiveCopy(ASSETS_DIR, STATIC_DIR, '.');
+    FileSystem::recursiveDelete(STATIC_DIR);
+    FileSystem::recursiveCopy(ASSETS_DIR, STATIC_DIR, '.');
     foreach ($this->pages as $route => $page) {
       $parts = pathinfo($route);
 
@@ -92,17 +119,22 @@ Class SimpleBlog{
   }
 
   private function  scanPages(){
-    $files = scandir(PAGES_DIR);
+    $files = FileSystem::recursiveScan(PAGES_DIR);
     foreach ($files as $file) {
       if (substr($file,0,1)==='.') continue;
 
       $newScope = array();
-      $rawContent = file_get_contents(PAGES_DIR.'/'.$file);
-      $scope = $this->parseContent($rawContent, $newScope);
-      $this->pages[$scope['route']] = $scope;
+      $rawContent = file_get_contents($file);
+      $scope = $this->compile($rawContent, $newScope);
+      $route = isset($scope['route']) ? $scope['route'] : null;
+      if ($route === null){
+        $route = '_';
+        echo "<div style=\"position:fixed;overflow:hidden;top: 0;left: 0;color:white;height:2em;width:100%;background:rgba(200,0,0,0.7)\">Route in file: $file is not defined</div>";
+      }
+      $this->pages[$route] = $scope;
     }
   }
-  private function parseContent($content, $scope){
+  private function compile($content, $scope){
       // cita dodele
       $pattern = "/\{\{([^:}]*):?(.*)\}\}/i";
       $offset = 0;
@@ -131,7 +163,7 @@ Class SimpleBlog{
   public function renderPage($route){
     $pageScope = $this->getPage($route);
     if ($pageScope===null) $this->send404();
-    return $this->parseContent(file_get_contents(WRAPPER_PAGE), $pageScope)['content'];
+    return $this->compile(file_get_contents(WRAPPER_PAGE), $pageScope)['content'];
 
   }
 
