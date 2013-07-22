@@ -1,9 +1,10 @@
 <!doctype html>
 {{version:2.2}}
-{{base:http://localhost/simple_blog/template/}}
+{{base:http://localhost/simple_blog/public/}}
 <html lang="en">
 <head>
   <base href="{{base}}">
+  <link href='http://fonts.googleapis.com/css?family=Source+Sans+Pro:200,400,600' rel='stylesheet' type='text/css'>
   <link rel="stylesheet" href="css/style.css">
   <meta charset="UTF-8">
   <title>{{title}}</title>
@@ -12,11 +13,13 @@
   <header>
     <nav>{{piece:navigation.html}}</nav>
   </header>
-  <nav class="articles">
-    {{piece:articles.html}}
-  </nav>
   <div class="content">
-    {{content}}
+    <article>
+      {{content}}
+    </article>
+    <aside>
+      <nav>{{piece:articles.html}}</nav>
+    </aside>
   </div>
   <footer>
     <div class="inner">

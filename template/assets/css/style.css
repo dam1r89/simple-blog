@@ -395,6 +395,18 @@ table {
     border-spacing: 0;
 }
 
+
+
+/**
+ * My styles
+ */
+html{
+    font-family: 'Source Sans Pro', sans-serif;
+}
+p{
+    line-height: 1.3em;
+    margin: 2.1em 0;
+}
 a{
     color: #33c;
     text-decoration: none;
@@ -421,6 +433,19 @@ header nav a {
     margin: auto;
     padding-bottom: 80px;
 }
+.content > article{
+    width: 70%;
+    float: left;
+}
+.content > aside{
+    width: 30%;
+    float: left;
+}
+.content > aside nav{
+    border-left: 1px solid #ccc;
+    margin: 16px 0 16px 15px;
+    padding-left: 8px;
+}
 footer{
     position: fixed;
     bottom: 0;
@@ -440,13 +465,13 @@ footer span{
 footer span.right{
     float: right;
 }
-.articles{
-    position: absolute;
-    background: rgba(0,0,0,0.8);
-    padding: 16px;
-    right: 0;
-    box-shadow: 0 0 2px rgba(0,0,0,0.9);
-}
-.articles a{
-    color: #eee;
+
+pre{
+    background-color: #f8f8f8;
+    border: 1px solid #ddd;
+    font-size: 13px;
+    line-height: 19px;
+    overflow: auto;
+    padding: 6px 10px;
+    border-radius: 3px;
 }

@@ -6,7 +6,8 @@ define('ASSETS_DIR', 'template/assets');
 define('WRAPPER_PAGE', 'template/index.html');
 define('PIECES_DIR', 'template/pieces');
 
-
+include 'Markdown.php';
+use \Michelf\Markdown;
 
 Class FileSystem{
   public static function recursiveDelete($path)
@@ -162,6 +163,7 @@ Class SimpleBlog{
 
   public function renderPage($route){
     $pageScope = $this->getPage($route);
+    $pageScope['content'] = Markdown::defaultTransform($pageScope['content']);
     if ($pageScope===null) $this->send404();
     return $this->compile(file_get_contents(WRAPPER_PAGE), $pageScope)['content'];
 
