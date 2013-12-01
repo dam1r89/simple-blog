@@ -1,7 +1,0 @@
-<?php foreach ($t->pages as $key => $value): ?>
-  <?php if (!isset($value['date'])) continue; ?>
-  <a href="<?php echo $key ?>">
-    <?php echo $value['title'] ?>
-    (<?php echo date('d/m/Y',strtotime($value['date'])) ?>)
-  </a>
-<?php endforeach; ?>
