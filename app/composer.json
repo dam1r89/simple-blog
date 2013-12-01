@@ -1,0 +1,8 @@
+{
+    "require": {
+        "dflydev/markdown": "1.*"
+    },
+    "autoload": {
+        "psr-0": {"dam1r89": "src/"}
+    }
+}

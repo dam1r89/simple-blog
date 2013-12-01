@@ -1,9 +1,9 @@
 RewriteEngine on
-DirectoryIndex ../index.php?r=
+DirectoryIndex ../app/index.php?r=
 
 RewriteCond assets/$0 -F
 RewriteRule ^(.*)$ assets/$1 [L]
 
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^(.*)$ ../index.php?r=$1
+RewriteRule ^(.*)$ ../app/index.php?r=$1

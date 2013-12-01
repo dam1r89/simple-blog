@@ -1,10 +1,18 @@
 <?php
+
+namespace dam1r89;
+use \RecursiveDirectoryIterator;
+use \RecursiveIteratorIterator;
+use \FilesystemIterator;
+
 Class FileSystem{
-  public static function recursiveDelete($path)
+  public static function recursiveDelete($dirPath)
   {
-    return is_file($path)?
-      @unlink($path):
-      array_map('FileSystem::recursiveDelete',glob($path.'/*'))==@rmdir($path) ;
+    foreach(new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dirPath, FilesystemIterator::SKIP_DOTS), RecursiveIteratorIterator::CHILD_FIRST) as $path) {
+    $path->isFile() ? unlink($path->getPathname()) : rmdir($path->getPathname());
+}
+rmdir($dirPath);
+
   }
   
     public static function recursiveCopy($src,$dst) { 

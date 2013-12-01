@@ -1,4 +1,4 @@
-{{route:folder/a.html}}
-{{title:My Blog}}
+{{route:about/me.html}}
+{{title:Damir Miladinov}}
 
-Ovo ce biti moj **blog**
+This will be my blog.
