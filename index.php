@@ -2,67 +2,40 @@
 
 define('PAGES_DIR', 'template/pages');
 define('STATIC_DIR', 'public');
+define('DEVELOP_DIR', 'template');
 define('ASSETS_DIR', 'template/assets');
-define('WRAPPER_PAGE', 'template/index.html');
+define('LAYOUT_PAGE', 'template/index.html');
 define('PIECES_DIR', 'template/pieces');
 
 include 'Markdown.php';
+include 'FileSystem.php';
+
 use \Michelf\Markdown;
-
-Class FileSystem{
-  public static function recursiveDelete($path)
-  {
-    return is_file($path)?
-      @unlink($path):
-      array_map('FileSystem::recursiveDelete',glob($path.'/*'))==@rmdir($path)
-    ;
-  }
-  public static function recursiveCopy($source, $dest, $diffDir = ''){
-      $sourceHandle = opendir($source);
-      if(!$diffDir)
-              $diffDir = $source;
-
-      mkdir($dest . '/' . $diffDir);
-
-      while($res = readdir($sourceHandle)){
-          if($res == '.' || $res == '..')
-              continue;
-
-          if(is_dir($source . '/' . $res)){
-              self::recursiveCopy($source . '/' . $res, $dest, $diffDir . '/' . $res);
-          } else {
-              copy($source . '/' . $res, $dest . '/' . $diffDir . '/' . $res);
-
-          }
-      }
-  }
-  public static function recursiveScan($path){
-    $allFiles = array();
-    foreach (scandir($path) as $fileName) {
-      if (substr($fileName,0,1)==='.') continue;
-      $file = $path.'/'.$fileName;
-      if (is_dir($file)){
-        $allFiles = array_merge($allFiles, self::recursiveScan($file));
-        continue;
-      }
-      $allFiles[] = $file;
-    }
-    return $allFiles;
-  }
-
-}
 
 
 Class SimpleBlog{
   private $pages = array();
   private $handlers;
+  private $engine;
+  private $outFolder;
 
 
-  public function __construct(){
+  public function __construct($build){
+    /**
+     * Hendleri kojima je prosledjen sadrzaj podatka koji je nadjen u
+     * template-u u obliku {{property:value}}. Selector handlera sluzi
+     * da se proveri da li property matchuje sa selectorom. Handler nakon obrade
+     * treba da vrati sadrzaj koji ce doci na to mesto. Svakom handleru
+     * je prosledjen $this objekat, $matches - delovi parsovanog stringa
+     * (string u zagradicama) i referenca na scope.
+     * Handleri probadaju od vrha na dole.
+     * @var array
+     */
+    // TODO: izbaciti handlere iz objekta
     $this->handlers = array(
         'piece' =>function($t, $matches, &$scope){
           ob_start();
-          include PIECES_DIR.'/'.$matches[2][0];
+          include PIECES_DIR.'/'.$matches[2][0].'.php';
           return ob_get_clean();
 
         },
@@ -74,6 +47,19 @@ Class SimpleBlog{
             }
           }
           return $matches[0][0];
+        },
+        'base' => function($t){
+
+          $basePath = $_SERVER['PHP_SELF'];
+          $pos = strrpos($basePath, '/');
+          $base = substr($basePath, 0, $pos+1).$t->outFolder.'/'; 
+          return sprintf(
+            "%s://%s%s",
+            isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] != 'off' ? 'https' : 'http',
+            $_SERVER['HTTP_HOST'],
+            $base
+          );
+
         },
         'content' => function($t, $matches, &$scope){
           // when inserting content put vars from current scope (if available)
@@ -94,23 +80,40 @@ Class SimpleBlog{
         },
       );
 
+    $this->outFolder = $build ? STATIC_DIR : DEVELOP_DIR;
 
-
+    /**
+     * Inicijalno skenira sve stranice.
+     */
     $this->scanPages();
+
   }
 
   public function build(){
+
     $cachedPages = array();
+    
+    // kopira asete u public direktorijum
     FileSystem::recursiveDelete(STATIC_DIR);
     FileSystem::recursiveCopy(ASSETS_DIR, STATIC_DIR, '.');
+    
     foreach ($this->pages as $route => $page) {
+      
       $parts = pathinfo($route);
 
+      // Kreira folder u obliku rute
       $path = STATIC_DIR . '/' . $parts['dirname'];
-      $basename = $path . '/' . ($parts['basename'] === '.' ? 'index.html' : $parts['basename']);
 
-      mkdir($path, 0, true);
-      file_put_contents($basename, $this->renderPage($route));
+      
+      //I ime fajla
+      $out = $path . '/' . ($parts['basename'] == '.' ? 'index.html' : $parts['basename']);
+
+      if (!file_exists($path)){
+        mkdir($path, 0777, true);
+      }
+
+      file_put_contents($out, $this->renderPage($route));
+
     }
   }
 
@@ -120,30 +123,63 @@ Class SimpleBlog{
   }
 
   private function  scanPages(){
+
     $files = FileSystem::recursiveScan(PAGES_DIR);
+    
     foreach ($files as $file) {
+      /**
+       * Preskace fajlove koji pocinju sa tackom.
+       */
       if (substr($file,0,1)==='.') continue;
 
       $newScope = array();
       $rawContent = file_get_contents($file);
+
+      /**
+       * Kompajlira sadrzaj templatea uz pomoc $scope-a i vraca novi $scope
+       * koji mora da ima 'route' da bi bio vidljiv. $scope sluzi za prosledjivanje
+       * podataka izmedju layouta i dokumenata.
+       */
+      
       $scope = $this->compile($rawContent, $newScope);
       $route = isset($scope['route']) ? $scope['route'] : null;
+
+      /**
+       * Ako ruta nije definisana pusti upozorenje
+       * 
+       */
       if ($route === null){
+        // TODO: zasto stavljam underscore?
         $route = '_';
         echo "<div style=\"position:fixed;overflow:hidden;top: 0;left: 0;color:white;height:2em;width:100%;background:rgba(200,0,0,0.7)\">Route in file: $file is not defined</div>";
       }
+      // Dodaje sve u array svih stranica
       $this->pages[$route] = $scope;
     }
   }
+
+  /**
+   * Kompajlira - primenjuje odgovarajuce handlere za svaki pronadjen pattern
+   * @param  String $content Template stranica
+   * @param  Array $scope   Sadrzi promenjive koje se prenose izmedju pages i wrapper-a
+   * @return Array          Vraca (moguce izmenjeni) scope
+   */
   private function compile($content, $scope){
-      // cita dodele
+      /**
+       * Cita patterne u obliku {{property:value}} i loopuje kroz sadrzaj
+       * i redom primenjuje handler koji matchuje.
+       */
       $pattern = "/\{\{([^:}]*):?(.*)\}\}/i";
       $offset = 0;
+
+       
       while(preg_match($pattern, $content, $matches, PREG_OFFSET_CAPTURE, $offset)){
         $property = $matches[1][0];
         foreach ($this->handlers as $handlerPattern => $handler) {
-          $handlerPattern = '/'.$handlerPattern.'/i';
-          if (preg_match($handlerPattern, $property, $arguments)){
+          $handlerPatternRegEx = '/'.$handlerPattern.'/i';
+
+          // Ako key handlera (property) matchuju primeni handler
+          if (preg_match($handlerPatternRegEx, $property)){
             $return = $handler($this, $matches, $scope);
             break;
           }
@@ -160,24 +196,51 @@ Class SimpleBlog{
     $route = $route  === '' ? '.' : $route;
     return isset($this->pages[$route]) ? $this->pages[$route] : null;
   }
-
+  /**
+   * Public i interna metoda koja vraca rendovanu stranicu sa wrapperom.
+   * @param  String $route Ruta fajla koji treba da se izrenda
+   * @return String        Izrendani html
+   */
   public function renderPage($route){
+    
+    $engine = $this->engine;
+
     $pageScope = $this->getPage($route);
-    $pageScope['content'] = Markdown::defaultTransform($pageScope['content']);
+
+    $pageScope['content'] = $engine($pageScope['content']);
+    
     if ($pageScope===null) $this->send404();
-    return $this->compile(file_get_contents(WRAPPER_PAGE), $pageScope)['content'];
+    return $this->compile(file_get_contents(LAYOUT_PAGE), $pageScope)['content'];
 
   }
 
+  public function setEngine($engine){
+    $this->engine = $engine;
+  }
+
 }
+
+/**
+ * Ako sarzi parametar r znaci da treba da odmah kompajlira fajlove
+ * i odmah izbaci na out. Ovako se zove iz template foldera, redirektuje
+ * requestovanu stranicu na r=<stranica>. Ako nije pozvan sa parametrom
+ * onda builduje staticke stranice u public folder.
+ */
+
 $build = !isset($_GET['r']);
+
 $r = $build ? '' : $_GET['r'];
 
-$sb = new SimpleBlog();
+$simpleBlog = new SimpleBlog($build);
+
+$simpleBlog->setEngine(function($input){
+  return Markdown::defaultTransform($input);
+});
+
 if ($build){
-  $sb->build();
+  $simpleBlog->build();
 }
 else{
-  echo $sb->renderPage($r);
+  echo $simpleBlog->renderPage($r);
 }
 ?>

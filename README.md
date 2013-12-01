@@ -8,3 +8,6 @@
 *[x] nicer way of building pieces
 *[ ] nice little editor - one file possibly
 *[ ] backup command (save with current date-time). Maybe just
+
+
+Base folder
