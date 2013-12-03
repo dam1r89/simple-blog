@@ -111,9 +111,12 @@ Class SimpleBlog{
         echo "<div style=\"position:fixed;overflow:hidden;top: 0;left: 0;color:white;height:2em;width:100%;background:rgba(200,0,0,0.7)\">Simple Blog: Route is not set in: $file. This file will be omitted.</div>";
         continue;
       }
+
       // Dodaje sve u array svih stranica
       $this->pages[$route] = $scope;
+
     }
+
   }
 
   /**
@@ -127,9 +130,9 @@ Class SimpleBlog{
        * Cita patterne u obliku {{property:value}} i loopuje kroz sadrzaj
        * i redom primenjuje handler koji matchuje.
        */
+      // $content = $this->parseHead($content);
       $pattern = "/\{\{([^:}]*):?(.*)\}\}/i";
       $offset = 0;
-// var_dump($this->handlers);die();
        
       while(preg_match($pattern, $content, $matches, PREG_OFFSET_CAPTURE, $offset)){
         $property = $matches[1][0];
@@ -168,11 +171,33 @@ Class SimpleBlog{
 
     $pageScope = $this->getPage($route);
     if ($pageScope===null) return null;
-    
     $pageScope['content'] = $engine($pageScope['content']);
     
     return $this->compile(file_get_contents(LAYOUT_PAGE), $pageScope)['content'];
 
+  }
+  /**
+   * Parsuje heder stranice po uzoru na docpad
+   * @param  String $input
+   * @return String
+   */
+  public function parseHead($input){
+    $blockPattern = "/---((.|\n)*)\n---/";
+
+    preg_match($blockPattern, $input, $matches);
+
+    
+    if (!isset($matches[1])) return $input;
+    $block = $matches[0];
+    $blockContent = $matches[1];
+
+    $propertyPattern = '/\n([^:]*):(.*)/';
+    $properties;
+    $output = preg_replace($propertyPattern, '{{$1:$2}}', $blockContent);
+
+    $propertyPattern = '/\n([^:]*$)/';
+    $output = preg_replace($propertyPattern, '{{$1}}', $output);
+    return str_replace($block, $output, $input);
   }
 
   public function setEngine($engine){

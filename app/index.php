@@ -14,6 +14,8 @@ use dam1r89\SimpleBlog\SimpleBlog;
 use dam1r89\SimpleBlog\Handlers;
 use dflydev\markdown\MarkdownParser;
 
+
+
 /**
  * Ako sarzi parametar r znaci da treba da odmah kompajlira fajlove
  * i odmah izbaci na out. Ovako se zove iz template foldera, redirektuje
@@ -38,6 +40,22 @@ $simpleBlog->setEngine(function($input){
 // Provo mora da se setuju handleri, da bi mogao da skenira i kompajlira
 $simpleBlog->addHandler(Handlers::getAll());
 
+//testing
+// $head = <<<EOF
+// ---
+// location:2043-12-34-neki-naziv blabla
+// head:neslato
+// navigation
+// ---
+// <p>nesto bezveze</p>
+// EOF;
+
+// var_dump($simpleBlog->parseHead($head));
+// die();
+
+
+//end testing
+
 $simpleBlog->scanPages();
 
 if ($build){
@@ -45,6 +63,7 @@ if ($build){
   header('Location: ..');
 }
 else{
+
   $output = $simpleBlog->renderPage($r);
   if ($output){
   	echo $output;
