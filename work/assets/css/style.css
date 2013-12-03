@@ -404,7 +404,7 @@ html{
     font-family: 'Source Sans Pro', sans-serif;
 }
 p{
-    line-height: 1.3em;
+    line-height: 1.4em;
     margin: 2.1em 0;
 }
 a{
@@ -465,7 +465,12 @@ footer span{
 footer span.right{
     float: right;
 }
-
+code{
+    background-color: #f8f8f8;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    padding: 1px 3px;
+}
 pre{
     background-color: #f8f8f8;
     border: 1px solid #ddd;
@@ -474,4 +479,13 @@ pre{
     overflow: auto;
     padding: 6px 10px;
     border-radius: 3px;
+}
+pre code{
+    background-color: transparent;
+    border: 0;
+    padding: 0
+}
+aside nav a{
+    display: block;
+    color: #386;
 }

@@ -7,6 +7,8 @@ This is {{title}}
 
 ## TODO list
 
-* one
-* two
-* three
+* automatically build on change
+* save backups
+* pull pages from google drive or
+* pull pages from sky drive
+* routes should contain default html extension

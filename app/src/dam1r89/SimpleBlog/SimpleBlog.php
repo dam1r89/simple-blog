@@ -10,6 +10,7 @@ Class SimpleBlog{
 
 
   public function __construct($build){
+
     /**
      * Hendleri kojima je prosledjen sadrzaj podatka koji je nadjen u
      * template-u u obliku {{property:value}}. Selector handlera sluzi

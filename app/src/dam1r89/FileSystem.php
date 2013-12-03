@@ -8,6 +8,7 @@ use \FilesystemIterator;
 Class FileSystem{
   public static function recursiveDelete($dirPath)
   {
+    if (!file_exists($dirPath)) return;
     foreach(new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dirPath, FilesystemIterator::SKIP_DOTS), RecursiveIteratorIterator::CHILD_FIRST) as $path) {
     $path->isFile() ? unlink($path->getPathname()) : rmdir($path->getPathname());
 }

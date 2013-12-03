@@ -1,4 +1,7 @@
 <?php
+
+date_default_timezone_set('UTC');
+
 define('STATIC_DIR', '../static');
 define('WORKING_DIR', '../work');
 define('PAGES_DIR', WORKING_DIR.'/pages');
