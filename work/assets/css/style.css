@@ -394,21 +394,38 @@ table {
     border-collapse: collapse;
     border-spacing: 0;
 }
+.cf:before,
+.cf:after {
+    content: " "; /* 1 */
+    display: table; /* 2 */
+}
+
+.cf:after {
+    clear: both;
+}
+
+.cf {
+    *zoom: 1;
+}
 
 
-
-/**
- * My styles
- */
 html{
     font-family: 'Source Sans Pro', sans-serif;
+    color: #223;
+}
+
+h2{;
+    border-bottom: 1px solid #eee;
+}
+h3{
+    color: #3593be
 }
 p{
     line-height: 1.4em;
     margin: 2.1em 0;
 }
 a{
-    color: #33c;
+    color: #3593be;
     text-decoration: none;
 }
 a:hover{
@@ -487,5 +504,4 @@ pre code{
 }
 aside nav a{
     display: block;
-    color: #386;
 }

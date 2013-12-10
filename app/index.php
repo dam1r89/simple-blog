@@ -40,19 +40,7 @@ $simpleBlog->setEngine(function($input){
 // Provo mora da se setuju handleri, da bi mogao da skenira i kompajlira
 $simpleBlog->addHandler(Handlers::getAll());
 
-//testing
-// $head = <<<EOF
-// ---
-// location:2043-12-34-neki-naziv blabla
-// head:neslato
-// navigation
-// ---
-// <p>nesto bezveze</p>
-// EOF;
-
-// var_dump($simpleBlog->parseHead($head));
-// die();
-
+// phpinfo(); die();
 
 //end testing
 

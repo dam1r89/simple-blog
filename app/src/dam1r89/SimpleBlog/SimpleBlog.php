@@ -7,6 +7,7 @@ Class SimpleBlog{
   private $handlers;
   private $engine;
   private $outFolder;
+  private $set;
 
 
   public function __construct($build){
@@ -25,7 +26,8 @@ Class SimpleBlog{
     $this->handlers = array('content' => function($simpleBlog, $matches, &$scope){
           // when inserting content put vars from current scope (if available)
           if (isset($scope['content'])){
-            return $simpleBlog->compile($scope['content'], $scope)['content'];
+            $newScope = $simpleBlog->compile($scope['content'], $scope);
+            return $newScope['content'];
           }
         },
         '.*' => function($simpleBlog, $matches, &$scope){
@@ -125,12 +127,13 @@ Class SimpleBlog{
    * @param  Array $scope   Sadrzi promenjive koje se prenose izmedju pages i wrapper-a
    * @return Array          Vraca (moguce izmenjeni) scope
    */
-  private function compile($content, $scope){
+  public function compile($content, $scope){
       /**
        * Cita patterne u obliku {{property:value}} i loopuje kroz sadrzaj
        * i redom primenjuje handler koji matchuje.
        */
-      // $content = $this->parseHead($content);
+      $content = $this->parseHead($content);
+
       $pattern = "/\{\{([^:}]*):?(.*)\}\}/i";
       $offset = 0;
        
@@ -173,7 +176,8 @@ Class SimpleBlog{
     if ($pageScope===null) return null;
     $pageScope['content'] = $engine($pageScope['content']);
     
-    return $this->compile(file_get_contents(LAYOUT_PAGE), $pageScope)['content'];
+    $newScope = $this->compile(file_get_contents(LAYOUT_PAGE), $pageScope);
+    return $newScope['content'];
 
   }
   /**
@@ -182,21 +186,28 @@ Class SimpleBlog{
    * @return String
    */
   public function parseHead($input){
-    $blockPattern = "/---((.|\n)*)\n---/";
+    $blockPattern = "/(^|\n)---(.*)\n---/s";
 
     preg_match($blockPattern, $input, $matches);
-
     
-    if (!isset($matches[1])) return $input;
+    $output = array();
+    
+    if (!isset($matches[2])) return $input;
+
     $block = $matches[0];
-    $blockContent = $matches[1];
+    $blockContent = $matches[2];
+    
+    $lines = explode("\n", $blockContent);
+    foreach ($lines as $i => $line) {
+      $trimmed = trim($line);
+      $keyVal = explode(':', $line);
+      if (isset($keyVal[1])){
+        $output[] = sprintf('{{%s:%s}}', $keyVal[0], trim($keyVal[1]));
+      }
+    }
 
-    $propertyPattern = '/\n([^:]*):(.*)/';
-    $properties;
-    $output = preg_replace($propertyPattern, '{{$1:$2}}', $blockContent);
-
-    $propertyPattern = '/\n([^:]*$)/';
-    $output = preg_replace($propertyPattern, '{{$1}}', $output);
+    $output = implode("\n", $output);
+    
     return str_replace($block, $output, $input);
   }
 
