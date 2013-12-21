@@ -87,7 +87,9 @@ Class SimpleBlog{
   /**
    * Skenira sve stranice i kompajlira ih
    */
-  public function  scanPages(){
+  public function scanPages(){
+
+    $logs = Array();
 
     $files = FileSystem::recursiveScan(PAGES_DIR);
      
@@ -110,7 +112,7 @@ Class SimpleBlog{
        * Ako ruta nije definisana pusti upozorenje
        */
       if ($route === null){
-        echo "<div style=\"position:fixed;overflow:hidden;top: 0;left: 0;color:white;height:2em;width:100%;background:rgba(200,0,0,0.7)\">Simple Blog: Route is not set in: $file. This file will be omitted.</div>";
+        $logs[] = "Route is not set in: <em>$file</em>. This file will be omitted.";
         continue;
       }
 
@@ -118,7 +120,7 @@ Class SimpleBlog{
       $this->pages[$route] = $scope;
 
     }
-
+    return $logs;
   }
 
   /**

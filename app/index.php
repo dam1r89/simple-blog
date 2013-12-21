@@ -40,11 +40,10 @@ $simpleBlog->setEngine(function($input){
 // Provo mora da se setuju handleri, da bi mogao da skenira i kompajlira
 $simpleBlog->addHandler(Handlers::getAll());
 
-// phpinfo(); die();
 
-//end testing
+$logs = $simpleBlog->scanPages();
 
-$simpleBlog->scanPages();
+echo "<div style=\"position:relative;overflow:hidden;top: 0;left: 0;color:white;width:100%;background:rgba(200,0,0,0.4)\">".implode('<br>', $logs)."</div>";
 
 if ($build){
   $simpleBlog->build();
