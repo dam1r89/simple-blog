@@ -33,7 +33,9 @@ Class Handlers {
 		          );
 
 		        },
-
+		        'shareThis' => function($simpleBlog, $matches, &$scope){
+		        	return $scope['route'];
+		        },
 		      );	
 		
 	}

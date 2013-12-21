@@ -448,7 +448,7 @@ header nav a {
 .content{
     width: 1000px;
     margin: auto;
-    padding-bottom: 80px;
+    padding-bottom: 18px;
 }
 .content > article{
     width: 70%;
@@ -464,16 +464,15 @@ header nav a {
     padding-left: 8px;
 }
 footer{
-    position: fixed;
     bottom: 0;
     font-size: .8em;
     color: #999;
-    padding: 4px 16px;
     width: 100%;
 }
 footer > .inner{
     width: 1000px;
     margin: auto;
+    padding: 14px 0;
 }
 footer span{
     float: left;
