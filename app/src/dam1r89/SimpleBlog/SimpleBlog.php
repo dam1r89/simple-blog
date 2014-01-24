@@ -4,58 +4,8 @@ use dam1r89\FileSystem;
 
 Class SimpleBlog{
   private $pages = array();
-  private $handlers;
-  private $engine;
-  private $outFolder;
-  private $set;
-
-
-  public function __construct($build){
-
-    /**
-     * Hendleri kojima je prosledjen sadrzaj podatka koji je nadjen u
-     * template-u u obliku {{property:value}}. Selector handlera sluzi
-     * da se proveri da li property matchuje sa selectorom. Handler nakon obrade
-     * treba da vrati sadrzaj koji ce doci na to mesto. Svakom handleru
-     * je prosledjen $this objekat, $matches - delovi parsovanog stringa
-     * (string u zagradicama) i referenca na scope.
-     * Handleri probadaju od vrha na dole.
-     * @var array
-     */
-    
-    $this->handlers = array('content' => function($simpleBlog, $matches, &$scope){
-          // when inserting content put vars from current scope (if available)
-          if (isset($scope['content'])){
-            $newScope = $simpleBlog->compile($scope['content'], $scope);
-            return $newScope['content'];
-          }
-        },
-        '.*' => function($simpleBlog, $matches, &$scope){
-          if ($matches[2][0]!==''){
-            $scope[$matches[1][0]] = $matches[2][0];
-            return '';
-          }
-
-          if (isset($scope[$matches[1][0]])){
-            return $scope[$matches[1][0]];
-          }
-          return $matches[0][0];
-        });
-    $this->outFolder = $build ? STATIC_DIR : WORKING_DIR;
-
-  }
-
-  public function getPages(){
-    return $this->pages;
-  }
-
-  public function getOutputFolder(){
-    return $this->outFolder;
-  }
-
-  public function addHandler($handler){
-    $this->handlers = array_merge($handler, $this->handlers);
-  }
+  private $engines = array();
+  private $log = array();
 
   public function build(){
 
@@ -89,7 +39,6 @@ Class SimpleBlog{
    */
   public function scanPages(){
 
-    $logs = Array();
 
     $files = FileSystem::recursiveScan(PAGES_DIR);
      
@@ -104,23 +53,34 @@ Class SimpleBlog{
        * Kompajlira sadrzaj templatea uz pomoc $scope-a i vraca novi $scope
        * koji mora da ima 'route' da bi bio vidljiv. $scope sluzi za prosledjivanje
        * podataka izmedju layouta i dokumenata.
-       */     
-      $scope = $this->compile($rawContent, $newScope);
-      $route = isset($scope['route']) ? $scope['route'] : null;
+       */
+
+
+      $page = $this->parse($rawContent);
+      $route = isset($page['route']) ? $page['route'] : null;
 
       /**
        * Ako ruta nije definisana pusti upozorenje
        */
       if ($route === null){
-        $logs[] = "Route is not set in: <em>$file</em>. This file will be omitted.";
+        $this->log[] = "Route is not set in: <em>$file</em>. This file will be omitted.";
         continue;
       }
 
+      $extensions = explode('.', pathinfo($file, PATHINFO_BASENAME));
+      array_shift($extensions);
+
+      $page['extensions'] = $extensions;
+
       // Dodaje sve u array svih stranica
-      $this->pages[$route] = $scope;
+      $this->pages[$route] = $page;
 
     }
-    return $logs;
+    return $this;
+  }
+
+  public function getLog(){
+    return $this->log;
   }
 
   /**
@@ -129,35 +89,30 @@ Class SimpleBlog{
    * @param  Array $scope   Sadrzi promenjive koje se prenose izmedju pages i wrapper-a
    * @return Array          Vraca (moguce izmenjeni) scope
    */
-  public function compile($content, $scope){
-      /**
-       * Cita patterne u obliku {{property:value}} i loopuje kroz sadrzaj
-       * i redom primenjuje handler koji matchuje.
-       */
-      $content = $this->parseHead($content);
+  public function parse($input){
 
-      $pattern = "/\{\{([^:}]*):?(.*)\}\}/i";
-      $offset = 0;
-       
-      while(preg_match($pattern, $content, $matches, PREG_OFFSET_CAPTURE, $offset)){
-        $property = $matches[1][0];
+    $parameters = array();
+    $blockPattern = "/(^|\n)---(.*)\n---/s";
 
-        if (!is_array($this->handlers)) throw new Exception("SimpleBlog: Handlers are not set", 1);
-        
-        foreach ($this->handlers as $handlerPattern => $handler) {
-          $handlerPatternRegEx = '/'.$handlerPattern.'/i';
+    preg_match($blockPattern, $input, $matches);
+    
+    
+    if (!isset($matches[2])) return $parameters;
 
-          // Ako key handlera (property) matchuju primeni handler
-          if (preg_match($handlerPatternRegEx, $property)){
-            $return = $handler($this, $matches, $scope);
-            break;
-          }
-        }
-        $offset = $matches[0][1]  + strlen($return);
-        $content = preg_replace($pattern, $return, $content, 1);
-      };
-      $scope['content'] = $content;
-      return $scope;
+    $block = $matches[0];
+    $blockContent = $matches[2];
+    
+    $lines = explode("\n", $blockContent);
+    foreach ($lines as $i => $line) {
+      $trimmed = trim($line);
+      $keyVal = explode(':', $line);
+      if (isset($keyVal[1])){
+        $parameters[$keyVal[0]] = trim($keyVal[1]);
+      }
+    }
+    $parameters['content'] = str_replace($block, '', $input);
+
+    return $parameters;
   }
 
   public function getPage($route){
@@ -172,49 +127,20 @@ Class SimpleBlog{
    */
   public function renderPage($route){
     
-    $engine = $this->engine;
 
-    $pageScope = $this->getPage($route);
-    if ($pageScope===null) return null;
-    $pageScope['content'] = $engine($pageScope['content']);
-    
-    $newScope = $this->compile(file_get_contents(LAYOUT_PAGE), $pageScope);
-    return $newScope['content'];
+    $page = $this->getPage($route);
+
+    if ($page===null)
+      return null;
+    // Mozda samo da prosledi rutu, a page da gleda dal postoji
+
+    $p = new Page($page, $this->pages, $this->engines);
+    return $p->render();
 
   }
-  /**
-   * Parsuje heder stranice po uzoru na docpad
-   * @param  String $input
-   * @return String
-   */
-  public function parseHead($input){
-    $blockPattern = "/(^|\n)---(.*)\n---/s";
 
-    preg_match($blockPattern, $input, $matches);
-    
-    $output = array();
-    
-    if (!isset($matches[2])) return $input;
-
-    $block = $matches[0];
-    $blockContent = $matches[2];
-    
-    $lines = explode("\n", $blockContent);
-    foreach ($lines as $i => $line) {
-      $trimmed = trim($line);
-      $keyVal = explode(':', $line);
-      if (isset($keyVal[1])){
-        $output[] = sprintf('{{%s:%s}}', $keyVal[0], trim($keyVal[1]));
-      }
-    }
-
-    $output = implode("\n", $output);
-    
-    return str_replace($block, $output, $input);
-  }
-
-  public function setEngine($engine){
-    $this->engine = $engine;
+  public function addEngine($extension, $engine){
+    $this->engines[$extension] = $engine;
   }
 
 }

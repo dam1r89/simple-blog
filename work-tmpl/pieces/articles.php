@@ -1,8 +1,8 @@
 <?php 
-$pages = array_filter($simpleBlog->getPages(), function($page){ return isset($page['date']); });
+$pages = array_filter($this->pages, function($page){ return isset($page['date']); });
 
 usort($pages, function($a, $b){
-	return strtotime($a['date']) >= strtotime($b['date']);
+	return strtotime($a['date']) <= strtotime($b['date']);
 });
 
 ?>

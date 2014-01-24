@@ -2,8 +2,33 @@
 
 ## TODO list
 
--pieces to app folder
+- error handling
 
 
+Work folder has four folder:
+	
+	- assets
+	- layouts
+	- pages
+	- pieces
 
-Base folder
+##Pieces
+
+**$this** object contains
+
+
+###Methods
+
+**val**
+
+**content** 
+
+**piece**
+
+
+###Properties
+
+**page**
+
+**pages**
+

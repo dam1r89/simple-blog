@@ -1,5 +1,4 @@
-<h1>SimpleBlog v2</h1>
-<p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Numquam, consequuntur maxime et quidem nihil officia culpa autem repellat perferendis sunt? Repudiandae, odit obcaecati recusandae quo ad beatae sint quam architecto.</p>
+<h1>SimpleBlog v4.0</h1>
 <ul>
   <li><a href="app">Build site!</a></li>
   <li><a href="work">Working site</a></li>

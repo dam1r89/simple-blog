@@ -3,10 +3,11 @@
 date_default_timezone_set('UTC');
 
 define('STATIC_DIR', '../static');
-define('WORKING_DIR', '../work');
+define('WORKING_DIR', '../work-tmpl');
 define('PAGES_DIR', WORKING_DIR.'/pages');
 define('ASSETS_DIR', WORKING_DIR.'/assets');
-define('LAYOUT_PAGE', WORKING_DIR.'/index.html');
+define('PIECES_DIR', WORKING_DIR.'/pieces');
+define('LAYOUT_PAGE', WORKING_DIR.'/layouts/default.php');
 
 require 'vendor/autoload.php';
 
@@ -27,23 +28,21 @@ $build = !isset($_GET['r']);
 
 $r = $build ? '' : $_GET['r'];
 
-$simpleBlog = new SimpleBlog($build);
+$simpleBlog = new SimpleBlog();
 
-$simpleBlog->setEngine(function($input){
+$simpleBlog->addEngine('md', function($input){
 	
 	$markdownParser = new MarkdownParser();
-
 	return $markdownParser->transformMarkdown($input);
 
 });
 
-// Provo mora da se setuju handleri, da bi mogao da skenira i kompajlira
-$simpleBlog->addHandler(Handlers::getAll());
 
-
-$logs = $simpleBlog->scanPages();
-
-echo "<div style=\"position:relative;overflow:hidden;top: 0;left: 0;color:white;width:100%;background:rgba(200,0,0,0.4)\">".implode('<br>', $logs)."</div>";
+$simpleBlog->scanPages();
+$logs = $simpleBlog->getLog();
+if (count($logs)){
+  echo "<div style=\"position:relative;overflow:hidden;top: 0;left: 0;color:white;width:100%;background:rgba(200,0,0,0.4)\">".implode('<br>', $logs)."</div>";
+}
 
 if ($build){
   $simpleBlog->build();
