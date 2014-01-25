@@ -6,7 +6,7 @@
     <link href='http://fonts.googleapis.com/css?family=Abel' rel='stylesheet' type='text/css'>
     <link rel="stylesheet" href="css/style.css">
     <meta charset="UTF-8">
-    <title><?php $this->val('title') ?></title>
+    <title><?php echo $this->prop('title') ?></title>
 </head>
 
 <body>

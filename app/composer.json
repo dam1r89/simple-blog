@@ -1,6 +1,7 @@
 {
     "require": {
-        "dflydev/markdown": "1.*"
+        "dflydev/markdown": "1.*",
+        "symfony/yaml": "2.4.*"
     },
     "autoload": {
         "psr-0": {"dam1r89": "src/"}

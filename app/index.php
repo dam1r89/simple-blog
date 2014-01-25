@@ -2,20 +2,27 @@
 
 date_default_timezone_set('UTC');
 
-define('STATIC_DIR', '../static');
-define('WORKING_DIR', '../work-tmpl');
-define('PAGES_DIR', WORKING_DIR.'/pages');
-define('ASSETS_DIR', WORKING_DIR.'/assets');
-define('PIECES_DIR', WORKING_DIR.'/pieces');
-define('LAYOUT_PAGE', WORKING_DIR.'/layouts/default.php');
+define('CONFIG_FILE', '../work/simpleblog.yml');
 
 require 'vendor/autoload.php';
 
 use dam1r89\SimpleBlog\SimpleBlog;
-use dam1r89\SimpleBlog\Handlers;
 use dflydev\markdown\MarkdownParser;
+use Symfony\Component\Yaml\Parser;
+use Symfony\Component\Yaml\Exception\ParseException;
 
 
+$base = pathinfo(CONFIG_FILE, PATHINFO_DIRNAME);
+
+$yaml = new Parser();
+$config = $yaml->parse(file_get_contents(CONFIG_FILE));
+
+foreach ($config as $key => $value) {
+  if (substr($value, 0,1) == '/') continue;
+  $config[$key] = $base .'/'.$value;
+}
+// TODO: Check if config is valid
+// TODO: Refatctor this
 
 /**
  * Ako sarzi parametar r znaci da treba da odmah kompajlira fajlove
@@ -28,7 +35,7 @@ $build = !isset($_GET['r']);
 
 $r = $build ? '' : $_GET['r'];
 
-$simpleBlog = new SimpleBlog();
+$simpleBlog = new SimpleBlog($config);
 
 $simpleBlog->addEngine('md', function($input){
 	
@@ -39,9 +46,11 @@ $simpleBlog->addEngine('md', function($input){
 
 
 $simpleBlog->scanPages();
-$logs = $simpleBlog->getLog();
-if (count($logs)){
-  echo "<div style=\"position:relative;overflow:hidden;top: 0;left: 0;color:white;width:100%;background:rgba(200,0,0,0.4)\">".implode('<br>', $logs)."</div>";
+
+$log = $simpleBlog->getLog();
+
+if (count($log)){
+  echo "<div style=\"position:relative;overflow:hidden;top: 0;left: 0;color:white;width:100%;background:rgba(200,0,0,0.4)\">".implode('<br>', $log)."</div>";
 }
 
 if ($build){
@@ -55,8 +64,32 @@ else{
   	echo $output;
   }
   else{
-    header($_SERVER["SERVER_PROTOCOL"]." 404 Not Found");
-    echo '<div style="font-family: Arial; font-size: 28px; width: 300px; margin: 80px auto; border: 1px solid #ccc; background: #eee; text-align: center; color: #666; border-radius: 4px; box-shadow: 0 0 3px #999; padding: 80px">Page not found :(';
+    $file = ($config['assets'].'/'.$r); 
+    if (is_file($file)){
+
+      $extension = pathinfo($file, PATHINFO_EXTENSION);
+      header('Content-Type: '.getMime($extension));
+      echo file_get_contents($file);
+    }
+    else{
+      header($_SERVER["SERVER_PROTOCOL"]." 404 Not Found");
+      echo '<div style="font-family: Arial; font-size: 28px; width: 300px; margin: 80px auto; border: 1px solid #ccc; background: #eee; text-align: center; color: #666; border-radius: 4px; box-shadow: 0 0 3px #999; padding: 80px">Page not found :(';
+      
+    }
+
   }
 }
 
+function getMime($extension){
+
+  switch ($extension){
+    case 'js':
+      return 'application/javascript';
+    case 'css':
+      return 'text/css';
+    default:
+      return 'text/plane';
+
+  }
+
+}

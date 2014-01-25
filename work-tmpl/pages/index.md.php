@@ -30,7 +30,7 @@ Work folder has four folder:
 
 **content()** 
 
-**piece(pieceName)** piece to be included in to the page. Name is a filename without extension
+**piece(pieceName)** piece to be included in to the page. Name is a filename without extension.
 
 
 ###Properties

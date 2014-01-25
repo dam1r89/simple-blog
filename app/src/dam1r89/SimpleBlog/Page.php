@@ -6,14 +6,11 @@ Class Page{
   private $engine;
   private $pages;
 
-  public function __construct($page, $pages, $engines){
+  public function __construct($config, $page, $pages, $engines){
+    $this->config = $config;
     $this->page = $page;
     $this->pages = $pages;
     $this->engines = $engines;
-  }
-
-  private function val($key){
-    echo $this->page[$key];
   }
 
   private function content(){
@@ -42,20 +39,29 @@ Class Page{
     echo $content;
   }
 
+  private function prop($key){
+
+    echo isset($this->page[$key]) ? $this->page[$key] : '';
+
+  }
+
   private function phpEngine($input){
-    ob_start(); 
+
+    ob_start();
     eval('?>'.$input);
     return ob_get_clean();
 
   }
 
   private function piece($name){
-    include PIECES_DIR.'/'.$name.'.php';
+
+    include $this->config['pieces'].'/'.$name.'.php';
   } 
 
   public function render(){
+
     ob_start();
-    include LAYOUT_PAGE;
+    include $this->config['layout'];
     return ob_get_clean();    
   }
 }

@@ -1,26 +1,31 @@
 <?php
 namespace dam1r89\SimpleBlog;
 use dam1r89\FileSystem;
+use Symfony\Component\Yaml\Parser;
+use Symfony\Component\Yaml\Exception\ParseException;
 
 Class SimpleBlog{
   private $pages = array();
   private $engines = array();
   private $log = array();
+  private $config;
+
+  public function __construct($config){
+    $this->config = $config; 
+  }
 
   public function build(){
 
-    $cachedPages = array();
-    
     // kopira asete u public direktorijum
-    FileSystem::recursiveDelete(STATIC_DIR);
-    FileSystem::recursiveCopy(ASSETS_DIR, STATIC_DIR, '.');
+    FileSystem::recursiveDelete($this->config['output']);
+    FileSystem::recursiveCopy($this->config['assets'], $this->config['output'], '.');
     
     foreach ($this->pages as $route => $page) {
       
       $parts = pathinfo($route);
 
       // Kreira folder u obliku rute
-      $path = STATIC_DIR . '/' . $parts['dirname'];
+      $path = $this->config['output'] . '/' . $parts['dirname'];
 
       
       //I ime fajla
@@ -34,29 +39,33 @@ Class SimpleBlog{
 
     }
   }
+
   /**
-   * Skenira sve stranice i kompajlira ih
+   * Scan all pages from defined directory and parse them
+   * @return [type] [description]
    */
   public function scanPages(){
 
-
-    $files = FileSystem::recursiveScan(PAGES_DIR);
+    $files = FileSystem::recursiveScan($this->config['pages']);
      
     foreach ($files as $file) {
-
-
-      $newScope = array();
       
       $rawContent = file_get_contents($file);
       
-      /**
-       * Kompajlira sadrzaj templatea uz pomoc $scope-a i vraca novi $scope
-       * koji mora da ima 'route' da bi bio vidljiv. $scope sluzi za prosledjivanje
-       * podataka izmedju layouta i dokumenata.
-       */
+      try {
 
+        $page = $this->parse($rawContent);
 
-      $page = $this->parse($rawContent);
+      } catch (ParseException $e) {
+
+        $this->log[] = sprintf("YAML block parsing failed: %s",$e->getMessage());
+
+      } catch (Exception $e) {
+
+        $this->log[] = springf("Error reading %s. This file will be omitted. %s", $file, $e->getMessage());
+
+      }
+
       $route = isset($page['route']) ? $page['route'] : null;
 
       /**
@@ -67,10 +76,7 @@ Class SimpleBlog{
         continue;
       }
 
-      $extensions = explode('.', pathinfo($file, PATHINFO_BASENAME));
-      array_shift($extensions);
-
-      $page['extensions'] = $extensions;
+      $page['extensions'] = $this->getExtensions($file);
 
       // Dodaje sve u array svih stranica
       $this->pages[$route] = $page;
@@ -79,15 +85,23 @@ Class SimpleBlog{
     return $this;
   }
 
+  private function getExtensions($file) { 
+      $extensions = explode('.', pathinfo($file, PATHINFO_BASENAME));
+      array_shift($extensions);
+      return $extensions;
+
+  }
+
   public function getLog(){
     return $this->log;
   }
-
   /**
-   * Kompajlira - primenjuje odgovarajuce handlere za svaki pronadjen pattern
-   * @param  String $content Template stranica
-   * @param  Array $scope   Sadrzi promenjive koje se prenose izmedju pages i wrapper-a
-   * @return Array          Vraca (moguce izmenjeni) scope
+   * Parse yaml block of the file and returns array with parameters that are specified
+   * in the block. Additional property is content which has a content with removed
+   * yaml block
+   * 
+   * @param  String $input  Input, content of a file 
+   * @return Array          Parsed parameters 
    */
   public function parse($input){
 
@@ -96,34 +110,34 @@ Class SimpleBlog{
 
     preg_match($blockPattern, $input, $matches);
     
-    
     if (!isset($matches[2])) return $parameters;
 
     $block = $matches[0];
     $blockContent = $matches[2];
     
-    $lines = explode("\n", $blockContent);
-    foreach ($lines as $i => $line) {
-      $trimmed = trim($line);
-      $keyVal = explode(':', $line);
-      if (isset($keyVal[1])){
-        $parameters[$keyVal[0]] = trim($keyVal[1]);
-      }
-    }
+    $yaml = new Parser();
+    $parameters = $yaml->parse($blockContent);
+
     $parameters['content'] = str_replace($block, '', $input);
 
     return $parameters;
   }
 
+  /**
+   * Returns appropriate page defined with required route.
+   * @param  String $route Route that is defined in page yaml block
+   * @return Array         Page with parameters
+   */
   public function getPage($route){
 
     $route = $route  === '' ? '.' : $route;
     return isset($this->pages[$route]) ? $this->pages[$route] : null;
   }
+
   /**
-   * Public i interna metoda koja vraca rendovanu stranicu sa wrapperom.
-   * @param  String $route Ruta fajla koji treba da se izrenda
-   * @return String        Izrendani html
+   * Renders a page by processing it trough all defined engines
+   * @param  String $route Route of a page that needs to be rendered
+   * @return String        Rendered page with layout
    */
   public function renderPage($route){
     
@@ -132,9 +146,9 @@ Class SimpleBlog{
 
     if ($page===null)
       return null;
-    // Mozda samo da prosledi rutu, a page da gleda dal postoji
 
-    $p = new Page($page, $this->pages, $this->engines);
+    $p = new Page($this->config, $page, $this->pages, $this->engines);
+
     return $p->render();
 
   }
