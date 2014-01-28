@@ -2,4 +2,4 @@ output: ../static
 pages : ./pages
 assets: ./assets
 pieces: ./pieces
-layout: ./layouts/default.php
+layouts: ./layouts

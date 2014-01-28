@@ -3,34 +3,34 @@
         "This file locks the dependencies of your project to a known state",
         "Read more about it at http://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file"
     ],
-    "hash": "78bb331bac7a6b434e8f0f113dd27733",
+    "hash": "92859c389b1b0d3a83b490a94a7d3598",
     "packages": [
         {
-            "name": "dflydev/markdown",
-            "version": "v1.0.3",
+            "name": "michelf/php-markdown",
+            "version": "1.4.0",
             "source": {
                 "type": "git",
-                "url": "https://github.com/dflydev/dflydev-markdown.git",
-                "reference": "6baed9b50f29c980795b6656d43722aadb126f7e"
+                "url": "https://github.com/michelf/php-markdown.git",
+                "reference": "96d8150406f67e683ef4acc09fef91785fef1266"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/dflydev/dflydev-markdown/zipball/6baed9b50f29c980795b6656d43722aadb126f7e",
-                "reference": "6baed9b50f29c980795b6656d43722aadb126f7e",
+                "url": "https://api.github.com/repos/michelf/php-markdown/zipball/96d8150406f67e683ef4acc09fef91785fef1266",
+                "reference": "96d8150406f67e683ef4acc09fef91785fef1266",
                 "shasum": ""
             },
             "require": {
-                "php": ">=5.3"
+                "php": ">=5.3.0"
             },
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "1.0-dev"
+                    "dev-lib": "1.4.x-dev"
                 }
             },
             "autoload": {
                 "psr-0": {
-                    "dflydev\\markdown": "src"
+                    "Michelf": ""
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -39,30 +39,22 @@
             ],
             "authors": [
                 {
-                    "name": "Dragonfly Development Inc.",
-                    "email": "info@dflydev.com",
-                    "homepage": "http://dflydev.com"
-                },
-                {
-                    "name": "Beau Simensen",
-                    "email": "beau@dflydev.com",
-                    "homepage": "http://beausimensen.com"
-                },
-                {
                     "name": "Michel Fortin",
-                    "homepage": "http://michelf.com"
+                    "email": "michel.fortin@michelf.ca",
+                    "homepage": "http://michelf.ca/",
+                    "role": "Developer"
                 },
                 {
                     "name": "John Gruber",
-                    "homepage": "http://daringfireball.net"
+                    "homepage": "http://daringfireball.net/"
                 }
             ],
-            "description": "PHP Markdown & Extra",
-            "homepage": "http://github.com/dflydev/dflydev-markdown",
+            "description": "PHP Markdown",
+            "homepage": "http://michelf.ca/projects/php-markdown/",
             "keywords": [
                 "markdown"
             ],
-            "time": "2013-09-23 12:00:18"
+            "time": "2013-11-29 17:09:24"
         },
         {
             "name": "symfony/yaml",

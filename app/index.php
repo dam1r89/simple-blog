@@ -7,7 +7,7 @@ define('CONFIG_FILE', '../work/simpleblog.yml');
 require 'vendor/autoload.php';
 
 use dam1r89\SimpleBlog\SimpleBlog;
-use dflydev\markdown\MarkdownParser;
+use \Michelf\Markdown;
 use Symfony\Component\Yaml\Parser;
 use Symfony\Component\Yaml\Exception\ParseException;
 
@@ -38,14 +38,10 @@ $r = $build ? '' : $_GET['r'];
 $simpleBlog = new SimpleBlog($config);
 
 $simpleBlog->addEngine('md', function($input){
-	
-	$markdownParser = new MarkdownParser();
-	return $markdownParser->transformMarkdown($input);
+	return Markdown::defaultTransform($input);
 
 });
 
-
-$simpleBlog->scanPages();
 
 $log = $simpleBlog->getLog();
 

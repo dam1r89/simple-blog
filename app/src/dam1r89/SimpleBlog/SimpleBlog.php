@@ -5,18 +5,20 @@ use Symfony\Component\Yaml\Parser;
 use Symfony\Component\Yaml\Exception\ParseException;
 
 Class SimpleBlog{
-  private $pages = array();
-  private $engines = array();
+
   private $log = array();
-  private $config;
+  public $config;
 
   public function __construct($config){
-    $this->config = $config; 
+    $this->config = $config;
+    $this->pages = $this->scanPages();
+    $this->layouts = $this->scanLayouts();
+    $this->pieces = $this->scanPieces(); 
+
   }
 
   public function build(){
 
-    // kopira asete u public direktorijum
     FileSystem::recursiveDelete($this->config['output']);
     FileSystem::recursiveCopy($this->config['assets'], $this->config['output'], '.');
     
@@ -40,11 +42,52 @@ Class SimpleBlog{
     }
   }
 
+  public function scanPieces(){
+
+    $pieces = array();
+
+    $files = FileSystem::recursiveScan($this->config['pieces']);
+     
+    foreach ($files as $file) {
+      
+      $name = pathinfo($file, PATHINFO_FILENAME);
+
+      $pieces[$name] = array(
+        'path' => $file,
+        'name' => $name
+      );
+
+    }
+    return $pieces;
+   
+  } 
+
+  public function scanLayouts(){
+
+    $layouts = array();
+
+    $files = FileSystem::recursiveScan($this->config['layouts']);
+     
+    foreach ($files as $file) {
+      
+      $name = pathinfo($file, PATHINFO_FILENAME);
+
+      $layouts[$name] = array(
+        'path' => $file,
+        'name' => $name
+      );
+
+    }
+    return $layouts; 
+  } 
+
   /**
    * Scan all pages from defined directory and parse them
    * @return [type] [description]
    */
   public function scanPages(){
+
+    $pages = array();
 
     $files = FileSystem::recursiveScan($this->config['pages']);
      
@@ -68,6 +111,8 @@ Class SimpleBlog{
 
       $route = isset($page['route']) ? $page['route'] : null;
 
+      $page['extensions'] = $this->getExtensions($file);
+        
       /**
        * Ako ruta nije definisana pusti upozorenje
        */
@@ -76,13 +121,12 @@ Class SimpleBlog{
         continue;
       }
 
-      $page['extensions'] = $this->getExtensions($file);
 
       // Dodaje sve u array svih stranica
-      $this->pages[$route] = $page;
+      $pages[$route] = $page;
 
     }
-    return $this;
+    return $pages;
   }
 
   private function getExtensions($file) { 
@@ -128,10 +172,10 @@ Class SimpleBlog{
    * @param  String $route Route that is defined in page yaml block
    * @return Array         Page with parameters
    */
-  public function getPage($route){
+  public function getPage($pages, $route){
 
     $route = $route  === '' ? '.' : $route;
-    return isset($this->pages[$route]) ? $this->pages[$route] : null;
+    return isset($pages[$route]) ? $pages[$route] : null;
   }
 
   /**
@@ -140,14 +184,14 @@ Class SimpleBlog{
    * @return String        Rendered page with layout
    */
   public function renderPage($route){
-    
 
-    $page = $this->getPage($route);
+    $page = $this->getPage($this->pages, $route);
 
     if ($page===null)
       return null;
 
-    $p = new Page($this->config, $page, $this->pages, $this->engines);
+
+    $p = new Page($this->pages, $page, $this->layouts, $this->pieces, $this->engines);
 
     return $p->render();
 

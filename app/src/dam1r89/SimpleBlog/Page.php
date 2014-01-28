@@ -3,24 +3,34 @@ namespace dam1r89\SimpleBlog;
 
 Class Page{
   private $page;
-  private $engine;
   private $pages;
+  private $pieces;
+  private $engines;
+  private $layout;
 
-  public function __construct($config, $page, $pages, $engines){
-    $this->config = $config;
+  public function __construct($pages, $page, $layouts, $pieces, $engines){
+
+    $layoutName = isset($page['layout']) ? $page['layout'] : 'index';
+
+    $this->layout = $layouts[$layoutName];
     $this->page = $page;
     $this->pages = $pages;
+    $this->pieces = $pieces;
     $this->engines = $engines;
+
+
   }
 
   private function content(){
-    foreach ($this->engines as $extension => $engine) {
-
-    }
 
     $page = $this->page;
+    echo $this->process($page);
+  }
+
+  private function process($page){
     $content = $page['content'];
-    foreach (array_reverse($page['extensions']) as $extension) {
+    $reversed = array_reverse($page['extensions']);
+    foreach ($reversed as $extension) {
 
       if ($extension === 'php'){
         $content = $this->phpEngine($content);
@@ -36,7 +46,8 @@ Class Page{
       $content = $engine($content);
 
     }
-    echo $content;
+    return $content;
+
   }
 
   private function prop($key){
@@ -55,14 +66,16 @@ Class Page{
 
   private function piece($name){
 
-    include $this->config['pieces'].'/'.$name.'.php';
+    include $this->pieces[$name]['path'];
+
   } 
 
   public function render(){
 
     ob_start();
-    include $this->config['layout'];
+    include $this->layout['path'];
     return ob_get_clean();    
+
   }
 }
 
