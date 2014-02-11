@@ -117,7 +117,7 @@ Class SimpleBlog{
        * Ako ruta nije definisana pusti upozorenje
        */
       if ($route === null){
-        $this->log[] = "Route is not set in: <em>$file</em>. This file will be omitted.";
+        $this->log[] = "Route is not set in: '$file'. This file will be omitted.";
         continue;
       }
 

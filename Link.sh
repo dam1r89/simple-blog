@@ -1,0 +1,1 @@
+php /Users/dam1r89/Projects/simple-blog/app/index.php

@@ -1,10 +1,12 @@
+#!/usr/bin/php -q
 <?php
 
 date_default_timezone_set('UTC');
 
-define('CONFIG_FILE', '../work/simpleblog.yml');
-
 require 'vendor/autoload.php';
+
+
+
 
 use dam1r89\SimpleBlog\SimpleBlog;
 use \Michelf\Markdown;
@@ -12,10 +14,18 @@ use Symfony\Component\Yaml\Parser;
 use Symfony\Component\Yaml\Exception\ParseException;
 
 
-$base = pathinfo(CONFIG_FILE, PATHINFO_DIRNAME);
+
+$configPath = getcwd() . '/' . trim($argv[1], '/').'/simpleblog.yml';
+
+if (!is_file($configPath)){
+  echo "Config '$configPath' file not found.\nShould be named simpleblog.yml\n";
+  exit();
+}
+
+$base = pathinfo($configPath, PATHINFO_DIRNAME);
 
 $yaml = new Parser();
-$config = $yaml->parse(file_get_contents(CONFIG_FILE));
+$config = $yaml->parse(file_get_contents($configPath));
 
 foreach ($config as $key => $value) {
   if (substr($value, 0,1) == '/') continue;
@@ -31,9 +41,7 @@ foreach ($config as $key => $value) {
  * onda builduje staticke stranice u public folder.
  */
 
-$build = !isset($_GET['r']);
-
-$r = $build ? '' : $_GET['r'];
+$r = $_GET['r'];
 
 $simpleBlog = new SimpleBlog($config);
 
@@ -49,11 +57,7 @@ if (count($log)){
   echo "<div style=\"position:relative;overflow:hidden;top: 0;left: 0;color:white;width:100%;background:rgba(200,0,0,0.4)\">".implode('<br>', $log)."</div>";
 }
 
-if ($build){
-  $simpleBlog->build();
-  header('Location: ..');
-}
-else{
+
 
   $output = $simpleBlog->renderPage($r);
   if ($output){
@@ -74,7 +78,6 @@ else{
     }
 
   }
-}
 
 function getMime($extension){
 
