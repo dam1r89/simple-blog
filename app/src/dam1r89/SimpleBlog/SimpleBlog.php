@@ -1,204 +1,113 @@
 <?php
+
 namespace dam1r89\SimpleBlog;
-use dam1r89\FileSystem;
-use Symfony\Component\Yaml\Parser;
-use Symfony\Component\Yaml\Exception\ParseException;
 
-Class SimpleBlog{
+Class SimpleBlog {
 
-  private $log = array();
-  public $config;
+    private $log;
+    private $parser;
+    private $conifg;
 
-  public function __construct($config){
-    $this->config = $config;
-    $this->pages = $this->scanPages();
-    $this->layouts = $this->scanLayouts();
-    $this->pieces = $this->scanPieces(); 
+    function __construct($configPath, $parser) {
+        $this->log = array();
 
-  }
+        $this->parser = $parser;
+        $this->configPath = $configPath;
 
-  public function build(){
+        $this->readConfig();
+        $this->scan();
+    }
 
-    FileSystem::recursiveDelete($this->config['output']);
-    FileSystem::recursiveCopy($this->config['assets'], $this->config['output'], '.');
-    
-    foreach ($this->pages as $route => $page) {
-      
-      $parts = pathinfo($route);
+    private function readConfig() {
 
-      // Kreira folder u obliku rute
-      $path = $this->config['output'] . '/' . $parts['dirname'];
+        $rawConfig = file_get_contents($this->configPath);
 
-      
-      //I ime fajla
-      $out = $path . '/' . ($parts['basename'] == '.' ? 'index.html' : $parts['basename']);
+        $parsedConfig = $this->parser->parse($rawConfig);
 
-      if (!file_exists($path)){
-        mkdir($path, 0777, true);
-      }
+        $config = $this->normalizeConfig($this->configPath, $parsedConfig);
 
-      file_put_contents($out, $this->renderPage($route));
+        $validConfig = $this->checkConfig($config);
+
+        if ($validConfig) {
+            $this->config = $config;
+        }
+    }
+
+    private function scan(){
+
+    	if (!isset($this->config)) {
+            return;
+        }
+
+        $scanner = new Scanner();
+
+        $engines = array('md', function($input) {
+
+	        return Markdown::defaultTransform($input);
+	    });
+
+
+        $this->blog = $scanner->create($this->config);
+        $this->blog->setEngines($engines);  	
+
+        $this->log = array_merge($this->log, $scanner->getLog());
 
     }
-  }
 
-  public function scanPieces(){
+    public function build() {
 
-    $pieces = array();
+        $builder = new Builder($this->config);
 
-    $files = FileSystem::recursiveScan($this->config['pieces']);
-     
-    foreach ($files as $file) {
-      
-      $name = pathinfo($file, PATHINFO_FILENAME);
-
-      $pieces[$name] = array(
-        'path' => $file,
-        'name' => $name
-      );
+        $builder->build($this->blog);
 
     }
-    return $pieces;
-   
-  } 
 
-  public function scanLayouts(){
+	public function getLog(){
+		return $this->log;
+	}
+	
+    public function getPage($route){
 
-    $layouts = array();
+    	$page = new Page($this->blog, $route);
 
-    $files = FileSystem::recursiveScan($this->config['layouts']);
-     
-    foreach ($files as $file) {
-      
-      $name = pathinfo($file, PATHINFO_FILENAME);
-
-      $layouts[$name] = array(
-        'path' => $file,
-        'name' => $name
-      );
-
+    	return $page->render();
     }
-    return $layouts; 
-  } 
 
-  /**
-   * Scan all pages from defined directory and parse them
-   * @return [type] [description]
-   */
-  public function scanPages(){
+    private function checkConfig($config) {
+        $valid = true;
+        $required = array('output', 'pages', 'assets', 'pieces', 'layouts');
+        foreach ($required as $value) {
 
-    $pages = array();
-
-    $files = FileSystem::recursiveScan($this->config['pages']);
-     
-    foreach ($files as $file) {
-      
-      $rawContent = file_get_contents($file);
-      
-      try {
-
-        $page = $this->parse($rawContent);
-
-      } catch (ParseException $e) {
-
-        $this->log[] = sprintf("YAML block parsing failed: %s",$e->getMessage());
-
-      } catch (Exception $e) {
-
-        $this->log[] = springf("Error reading %s. This file will be omitted. %s", $file, $e->getMessage());
-
-      }
-
-      $route = isset($page['route']) ? $page['route'] : null;
-
-      $page['extensions'] = $this->getExtensions($file);
-        
-      /**
-       * Ako ruta nije definisana pusti upozorenje
-       */
-      if ($route === null){
-        $this->log[] = "Route is not set in: '$file'. This file will be omitted.";
-        continue;
-      }
-
-
-      // Dodaje sve u array svih stranica
-      $pages[$route] = $page;
-
+            if (!array_key_exists($value, $config)) {
+                $this->log[] = "Missing '$value' in config file.";
+                $valid = false;
+                continue;
+            }
+            $path = $config[$value];
+            if (!file_exists($path)) {
+                $this->log[] = "File/Folder does not exist '$path' in as a '$value' parameter in config file.";
+                $valid = false;
+            }
+        }
+        return $valid;
     }
-    return $pages;
-  }
 
-  private function getExtensions($file) { 
-      $extensions = explode('.', pathinfo($file, PATHINFO_BASENAME));
-      array_shift($extensions);
-      return $extensions;
+    private function normalizeConfig($configPath, $rawConfig) {
 
-  }
+        $base = pathinfo($configPath, PATHINFO_DIRNAME);
 
-  public function getLog(){
-    return $this->log;
-  }
-  /**
-   * Parse yaml block of the file and returns array with parameters that are specified
-   * in the block. Additional property is content which has a content with removed
-   * yaml block
-   * 
-   * @param  String $input  Input, content of a file 
-   * @return Array          Parsed parameters 
-   */
-  public function parse($input){
+        $config = array();
+        foreach ($rawConfig as $key => $value) {
 
-    $parameters = array();
-    $blockPattern = "/(^|\n)---(.*)\n---/s";
+            //continue on absolute paths
+            if (substr($value, 0, 1) == '/') {
+                $config[$key] = $value;
+                continue;
+            }
+            $config[$key] = $base . '/' . $value;
 
-    preg_match($blockPattern, $input, $matches);
-    
-    if (!isset($matches[2])) return $parameters;
-
-    $block = $matches[0];
-    $blockContent = $matches[2];
-    
-    $yaml = new Parser();
-    $parameters = $yaml->parse($blockContent);
-
-    $parameters['content'] = str_replace($block, '', $input);
-
-    return $parameters;
-  }
-
-  /**
-   * Returns appropriate page defined with required route.
-   * @param  String $route Route that is defined in page yaml block
-   * @return Array         Page with parameters
-   */
-  public function getPage($pages, $route){
-
-    $route = $route  === '' ? '.' : $route;
-    return isset($pages[$route]) ? $pages[$route] : null;
-  }
-
-  /**
-   * Renders a page by processing it trough all defined engines
-   * @param  String $route Route of a page that needs to be rendered
-   * @return String        Rendered page with layout
-   */
-  public function renderPage($route){
-
-    $page = $this->getPage($this->pages, $route);
-
-    if ($page===null)
-      return null;
-
-
-    $p = new Page($this->pages, $page, $this->layouts, $this->pieces, $this->engines);
-
-    return $p->render();
-
-  }
-
-  public function addEngine($extension, $engine){
-    $this->engines[$extension] = $engine;
-  }
+        }
+        return $config;
+    }
 
 }
