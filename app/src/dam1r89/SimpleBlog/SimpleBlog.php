@@ -1,6 +1,7 @@
 <?php
 
 namespace dam1r89\SimpleBlog;
+use Michelf\Markdown;
 
 Class SimpleBlog {
 
@@ -41,7 +42,7 @@ Class SimpleBlog {
 
         $scanner = new Scanner();
 
-        $engines = array('md', function($input) {
+        $engines = array('md' => function($input) {
 
 	        return Markdown::defaultTransform($input);
 	    });
@@ -104,7 +105,8 @@ Class SimpleBlog {
                 $config[$key] = $value;
                 continue;
             }
-            $config[$key] = $base . '/' . $value;
+            $absPath =  $base . '/' . $value;
+            $config[$key] = str_replace('/./', '/', $absPath);
 
         }
         return $config;
