@@ -7,7 +7,7 @@ Class SimpleBlog {
 
     private $log;
     private $parser;
-    private $conifg;
+    private $blog;
 
     function __construct($configPath, $parser) {
         $this->log = array();
@@ -56,9 +56,11 @@ Class SimpleBlog {
     }
 
     public function build() {
-
+        
+        if (!isset($this->config)){
+            return null;
+        }        
         $builder = new Builder($this->config);
-
         $builder->build($this->blog);
 
     }

@@ -7,7 +7,7 @@ use Symfony\Component\Yaml\Parser;
 use Symfony\Component\Yaml\Exception\ParseException;
 
 /**
- * 
+ *
  * @property array $log
  * @property array $config
  * @property Blog $blog
@@ -16,7 +16,6 @@ Class Scanner {
 
     private $log = array();
     private $config;
-    private $blog;
 
     public function create($config) {
         $this->config = $config;
@@ -123,9 +122,9 @@ Class Scanner {
      * Parse yaml block of the file and returns array with parameters that are specified
      * in the block. Additional property is content which has a content with removed
      * yaml block
-     * 
-     * @param  String $input  Input, content of a file 
-     * @return Array          Parsed parameters 
+     *
+     * @param  String $input  Input, content of a file
+     * @return Array          Parsed parameters
      */
     private function parse($input) {
 

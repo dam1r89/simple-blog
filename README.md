@@ -32,7 +32,7 @@ assets folder you would reference it in your layout like they are on the same fo
 
 ###Layouts
 
-Layouts will be treated as a php file, even if it has other extension. Default layout is `index.html`.
+Layouts will be treated as a php file, even if it has other extension. Default layout is `layout.html`.
 In layout you can use properties that are defined i **YAML** block of a page.
 
 	---

@@ -1,5 +1,0 @@
-output: ../static
-pages : ./pages
-assets: ./assets
-pieces: ./pieces
-layouts: ./layouts

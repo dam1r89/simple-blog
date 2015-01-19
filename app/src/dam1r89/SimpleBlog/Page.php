@@ -18,8 +18,8 @@ Class Page {
 
         $layouts = $blog->getLayouts();
 
-        $layoutName = isset($this->page['layout']) ? $this->page['layout'] : 'index';
-        $this->layout = $layouts[$layoutName];
+        $layoutName = isset($this->page['layout']) ? $this->page['layout'] : 'layout';
+        $this->layout = isset($layouts[$layoutName]) ? $layouts[$layoutName] : null;
 
     }
 
@@ -83,7 +83,12 @@ Class Page {
     public function render() {
 
         ob_start();
-        include $this->layout['path'];
+        if ($this->layout['path']){
+            include $this->layout['path'];
+        }
+        else{
+            $this->content();
+        }
         return ob_get_clean();
     }
 
